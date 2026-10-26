@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy QR Code Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="js/tailwind.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Inter Locale -->
+    <link rel="stylesheet" href="css/inter.css">
+    <!-- Phosphor Icons -->
+    <link rel="stylesheet" href="css/regular/style.css">
+    <link rel="stylesheet" href="css/bold/style.css">
+    <link rel="stylesheet" href="css/duotone/style.css">
+    <link rel="stylesheet" href="css/fill/style.css">
+    <link rel="stylesheet" href="css/light/style.css">
+    <link rel="stylesheet" href="css/thin/style.css">
+    <!-- QR Code Styling (for advanced QR generation) -->
+    <script type="text/javascript" src="js/qr-code-styling.js"></script>
+    <!-- html2canvas (for snapshotting QR with borders) -->
+    <script src="js/html2canvas.min.js"></script>
+    <!-- jsPDF (for PDF export) -->
+    <script src="js/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col font-sans selection:bg-blue-200 dark:selection:bg-blue-900">
+
+    <!-- Navbar -->
+    <header class="w-full bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-between items-center transition-colors duration-300 z-10 relative">
+        <div class="flex items-center gap-3">
+            <i class="ph ph-qr-code text-3xl text-blue-600 dark:text-blue-400"></i>
+            <h1 class="text-xl font-bold tracking-tight">Privacy QR Generator</h1>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Toggle Light/Dark Mode">
+            <i class="ph ph-moon text-xl block dark:hidden"></i>
+            <i class="ph ph-sun text-xl hidden dark:block"></i>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center p-4 sm:p-8 space-y-8 w-full max-w-6xl mx-auto">
+        
+        <!-- Section 1: Input -->
+        <section class="w-full bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+            <div class="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto hide-scrollbar">
+                <button class="tab-btn active flex-1 py-4 px-6 text-center font-medium text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all" data-target="tab-link">
+                    <i class="ph ph-link align-middle mr-2 text-lg"></i>Link
+                </button>
+                <button class="tab-btn flex-1 py-4 px-6 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all" data-target="tab-text">
+                    <i class="ph ph-text-aa align-middle mr-2 text-lg"></i>Text
+                </button>
+                <button class="tab-btn flex-1 py-4 px-6 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all" data-target="tab-image">
+                    <i class="ph ph-image align-middle mr-2 text-lg"></i>Image
+                </button>
+                <button class="tab-btn flex-1 py-4 px-6 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all" data-target="tab-video">
+                    <i class="ph ph-video align-middle mr-2 text-lg"></i>Video
+                </button>
+            </div>
+
+            <div class="p-6 sm:p-8">
+                <!-- Tab: Link -->
+                <div id="tab-link" class="tab-content block">
+                    <label class="block text-sm font-medium mb-2">Website URL</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="input-link" placeholder="https://example.com" class="flex-grow p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        <button class="paste-btn px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors font-medium flex items-center gap-2" data-target="input-link">
+                            <i class="ph ph-clipboard"></i> Paste
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab: Text -->
+                <div id="tab-text" class="tab-content hidden">
+                    <label class="block text-sm font-medium mb-2">Plain Text</label>
+                    <div class="relative">
+                        <textarea id="input-text" rows="4" placeholder="Enter your text here..." class="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"></textarea>
+                        <button class="paste-btn absolute bottom-3 right-3 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium flex items-center gap-2 shadow-sm" data-target="input-text">
+                            <i class="ph ph-clipboard"></i> Paste
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab: Image & Video Shared Structure -->
+                <div id="tab-image" class="tab-content hidden">
+                    <div class="bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 p-4 rounded-xl mb-4 text-sm flex items-start gap-3">
+                        <i class="ph ph-warning-circle text-xl mt-0.5"></i>
+                        <p><strong>Strict Size Limit:</strong> Standard offline QR codes can hold a maximum of ~3KB of data. Only extremely small, heavily compressed images (e.g., tiny low-res monochrome icons) will work without a server.</p>
+                    </div>
+                    <div id="drop-zone-image" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-10 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer flex flex-col items-center justify-center">
+                        <i class="ph ph-upload-simple text-4xl text-gray-400 mb-3"></i>
+                        <p class="font-medium text-gray-700 dark:text-gray-300">Drag & drop an image here</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">or click to browse (Max ~2.5KB)</p>
+                        <input type="file" id="file-image" accept="image/*" class="hidden">
+                    </div>
+                    <p id="file-name-image" class="mt-2 text-sm text-center text-gray-500 truncate"></p>
+                </div>
+
+                <div id="tab-video" class="tab-content hidden">
+                    <div class="bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 p-4 rounded-xl mb-4 text-sm flex items-start gap-3">
+                        <i class="ph ph-warning-circle text-xl mt-0.5"></i>
+                        <p><strong>Strict Size Limit:</strong> Video files are incredibly difficult to fit into a raw QR code (~3KB limit). This is provided for experimental purposes with incredibly tiny/short compressed base64 strings.</p>
+                    </div>
+                    <div id="drop-zone-video" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-10 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer flex flex-col items-center justify-center">
+                        <i class="ph ph-upload-simple text-4xl text-gray-400 mb-3"></i>
+                        <p class="font-medium text-gray-700 dark:text-gray-300">Drag & drop a video here</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">or click to browse (Max ~2.5KB)</p>
+                        <input type="file" id="file-video" accept="video/*" class="hidden">
+                    </div>
+                    <p id="file-name-video" class="mt-2 text-sm text-center text-gray-500 truncate"></p>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="generate-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2 transform active:scale-95">
+                        <i class="ph ph-magic-wand"></i> Generate QR Code
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2 & 3 Wrapper (Hidden until generated) -->
+        <div id="workspace-area" class="w-full hidden flex-col gap-8">
+            
+            <div class="flex flex-col lg:flex-row gap-8 w-full">
+                <!-- Section 2 Left: Preview -->
+                <section class="w-full lg:w-1/2 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 flex flex-col items-center justify-center transition-colors duration-300">
+                    <h2 class="text-lg font-bold mb-6 self-start w-full border-b pb-2 dark:border-gray-700">Preview</h2>
+                    
+                    <!-- Wrapper for html2canvas to snapshot -->
+                    <div class="p-6 rounded-2xl bg-gray-100 dark:bg-gray-900 shadow-inner flex items-center justify-center w-full overflow-hidden">
+                        
+                        <!-- Actual Capture Area -->
+                        <div id="capture-area" class="relative p-6 transition-all duration-300 rounded-xl" style="background-color: #ffffff;">
+                            
+                            <!-- Top Text -->
+                            <div id="preview-text-top" class="text-center font-bold text-gray-800 mb-2 min-h-[1.5em] empty:hidden"></div>
+                            
+                            <div class="flex items-center justify-center">
+                                <!-- Left Text -->
+                                <div id="preview-text-left" class="vertical-text font-bold text-gray-800 mr-2 min-h-[1.5em] empty:hidden" style="transform: rotate(180deg);"></div>
+                                
+                                <!-- QR Code Container -->
+                                <div id="qr-container" class="rounded-lg overflow-hidden bg-white"></div>
+                                
+                                <!-- Right Text -->
+                                <div id="preview-text-right" class="vertical-text font-bold text-gray-800 ml-2 min-h-[1.5em] empty:hidden" style="transform: rotate(0deg); writing-mode: vertical-lr;"></div>
+                            </div>
+                            
+                            <!-- Bottom Text -->
+                            <div id="preview-text-bottom" class="text-center font-bold text-gray-800 mt-2 min-h-[1.5em] empty:hidden"></div>
+                            
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Section 2 Right: Customization & Section 3: Export -->
+                <section class="w-full lg:w-1/2 flex flex-col gap-6">
+                    
+                    <!-- Customization Options -->
+                    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 sm:p-8 transition-colors duration-300">
+                        <h2 class="text-lg font-bold mb-4 border-b pb-2 dark:border-gray-700">Customization</h2>
+                        
+                        <div class="space-y-5">
+                            <!-- Style Selectors -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Matrix Style</label>
+                                    <select id="opt-dots" class="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl outline-none">
+                                        <option value="square">Square</option>
+                                        <option value="dots">Dots</option>
+                                        <option value="rounded">Rounded</option>
+                                        <option value="extra-rounded">Extra Rounded</option>
+                                        <option value="classy">Classy</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Corner Style</label>
+                                    <select id="opt-corners" class="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl outline-none">
+                                        <option value="square">Square</option>
+                                        <option value="dot">Dot</option>
+                                        <option value="extra-rounded">Rounded</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Colors -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">QR Color</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="opt-color-fg" value="#000000" class="h-10 w-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                                        <input type="text" id="opt-color-fg-text" value="#000000" class="flex-grow p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none uppercase font-mono">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Background Color</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="opt-color-bg" value="#ffffff" class="h-10 w-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                                        <input type="text" id="opt-color-bg-text" value="#FFFFFF" class="flex-grow p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none uppercase font-mono">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Border Text -->
+                            <div class="pt-2">
+                                <label class="block text-sm font-medium mb-2">Border Text Labels</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="text" id="opt-text-top" placeholder="Top Text" class="p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none">
+                                    <input type="text" id="opt-text-bottom" placeholder="Bottom Text" class="p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none">
+                                    <input type="text" id="opt-text-left" placeholder="Left Text" class="p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none">
+                                    <input type="text" id="opt-text-right" placeholder="Right Text" class="p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none">
+                                </div>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <label class="block text-sm font-medium">Text Color:</label>
+                                    <input type="color" id="opt-text-color" value="#1f2937" class="h-8 w-8 rounded cursor-pointer bg-transparent border-0 p-0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Section -->
+                    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 sm:p-8 transition-colors duration-300 flex-grow flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold mb-4 border-b pb-2 dark:border-gray-700">Export & Download</h2>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Format</label>
+                                    <select id="export-format" class="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl outline-none">
+                                        <option value="png">PNG Image</option>
+                                        <option value="webp">WEBP Image</option>
+                                        <option value="pdf">PDF Document</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Scale/Quality</label>
+                                    <input type="range" id="export-scale" min="1" max="5" value="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-3 dark:bg-gray-700">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>Low</span>
+                                        <span id="scale-val-display">2x</span>
+                                        <span>High</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button id="btn-download" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                                <i class="ph ph-download-simple text-xl"></i> Download
+                            </button>
+                            <button id="btn-reset" class="sm:flex-none px-6 py-3 bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                                <i class="ph ph-arrow-counter-clockwise text-xl"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal for Alerts (No native alert() allowed) -->
+    <div id="custom-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="modal-content">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+                    <i class="ph ph-warning text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold" id="modal-title">Notice</h3>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300 mb-6" id="modal-message">Message goes here.</p>
+            <div class="flex justify-end">
+                <button id="btn-modal-close" class="px-6 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-xl font-medium transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            currentTab: 'tab-link',
+            qrData: '', // holds url, text, or base64
+            qrCodeStyling: null,
+            baseSize: 300,
+            fileLimitBytes: 3000 // approx safe limit for QR
+        };
+
+        // --- DOM Elements ---
+        const els = {
+            themeToggle: document.getElementById('theme-toggle'),
+            tabs: document.querySelectorAll('.tab-btn'),
+            tabContents: document.querySelectorAll('.tab-content'),
+            inputs: {
+                link: document.getElementById('input-link'),
+                text: document.getElementById('input-text'),
+                imageFile: document.getElementById('file-image'),
+                videoFile: document.getElementById('file-video'),
+            },
+            dropZones: {
+                image: document.getElementById('drop-zone-image'),
+                video: document.getElementById('drop-zone-video')
+            },
+            fileNames: {
+                image: document.getElementById('file-name-image'),
+                video: document.getElementById('file-name-video')
+            },
+            pasteBtns: document.querySelectorAll('.paste-btn'),
+            generateBtn: document.getElementById('generate-btn'),
+            workspace: document.getElementById('workspace-area'),
+            qrContainer: document.getElementById('qr-container'),
+            captureArea: document.getElementById('capture-area'),
+            
+            // Customization
+            optDots: document.getElementById('opt-dots'),
+            optCorners: document.getElementById('opt-corners'),
+            optColorFg: document.getElementById('opt-color-fg'),
+            optColorFgText: document.getElementById('opt-color-fg-text'),
+            optColorBg: document.getElementById('opt-color-bg'),
+            optColorBgText: document.getElementById('opt-color-bg-text'),
+            
+            // Text Borders
+            optTextTop: document.getElementById('opt-text-top'),
+            optTextBottom: document.getElementById('opt-text-bottom'),
+            optTextLeft: document.getElementById('opt-text-left'),
+            optTextRight: document.getElementById('opt-text-right'),
+            optTextColor: document.getElementById('opt-text-color'),
+            
+            // Preview Text Elements
+            prevTextTop: document.getElementById('preview-text-top'),
+            prevTextBottom: document.getElementById('preview-text-bottom'),
+            prevTextLeft: document.getElementById('preview-text-left'),
+            prevTextRight: document.getElementById('preview-text-right'),
+
+            // Export
+            exportFormat: document.getElementById('export-format'),
+            exportScale: document.getElementById('export-scale'),
+            scaleValDisplay: document.getElementById('scale-val-display'),
+            btnDownload: document.getElementById('btn-download'),
+            btnReset: document.getElementById('btn-reset'),
+
+            // Modal
+            modal: document.getElementById('custom-modal'),
+            modalContent: document.getElementById('modal-content'),
+            modalTitle: document.getElementById('modal-title'),
+            modalMessage: document.getElementById('modal-message'),
+            modalClose: document.getElementById('btn-modal-close')
+        };
+
+        // --- Initialization ---
+        function init() {
+            setupTheme();
+            setupTabs();
+            setupPaste();
+            setupDragAndDrop();
+            setupCustomizationListeners();
+            setupExportListeners();
+            
+            els.generateBtn.addEventListener('click', handleGenerate);
+            els.modalClose.addEventListener('click', closeModal);
+        }
+
+        // --- Utils & Modal ---
+        function showModal(title, message) {
+            els.modalTitle.textContent = title;
+            els.modalMessage.textContent = message;
+            els.modal.classList.remove('hidden');
+            // Small timeout to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                els.modal.classList.remove('opacity-0');
+                els.modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            els.modal.classList.add('opacity-0');
+            els.modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                els.modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- Theme Management ---
+        function setupTheme() {
+            const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
+            els.themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+        }
+
+        // --- Tabs ---
+        function setupTabs() {
+            els.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active from all
+                    els.tabs.forEach(t => {
+                        t.classList.remove('text-blue-600', 'border-blue-600', 'bg-blue-50/50', 'dark:bg-blue-900/20', 'dark:text-blue-400');
+                        t.classList.add('text-gray-500', 'border-transparent');
+                    });
+                    els.tabContents.forEach(c => c.classList.add('hidden'));
+
+                    // Add active to current
+                    tab.classList.add('text-blue-600', 'border-blue-600', 'bg-blue-50/50', 'dark:bg-blue-900/20', 'dark:text-blue-400');
+                    tab.classList.remove('text-gray-500', 'border-transparent');
+                    
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).classList.remove('hidden');
+                    state.currentTab = targetId;
+                    
+                    // Reset generated data when switching tabs (optional UX choice)
+                    state.qrData = ''; 
+                });
+            });
+        }
+
+        // --- Paste Functionality ---
+        function setupPaste() {
+            els.pasteBtns.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        const targetId = btn.getAttribute('data-target');
+                        document.getElementById(targetId).value = text;
+                    } catch (err) {
+                        showModal('Permission Denied', 'Unable to read clipboard. Please paste manually using Ctrl+V or Cmd+V.');
+                    }
+                });
+            });
+        }
+
+        // --- File Drag & Drop ---
+        function setupDragAndDrop() {
+            ['image', 'video'].forEach(type => {
+                const zone = els.dropZones[type];
+                const input = els.inputs[`${type}File`];
+                const nameDisplay = els.fileNames[type];
+
+                zone.addEventListener('click', () => input.click());
+
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('drag-active');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-active');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-active');
+                    if (e.dataTransfer.files.length) {
+                        input.files = e.dataTransfer.files;
+                        handleFileUpload(input.files[0], type, nameDisplay);
+                    }
+                });
+
+                input.addEventListener('change', () => {
+                    if (input.files.length) {
+                        handleFileUpload(input.files[0], type, nameDisplay);
+                    }
+                });
+            });
+        }
+
+        function handleFileUpload(file, type, nameDisplay) {
+            if (!file) return;
+            
+            nameDisplay.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+
+            if (file.size > state.fileLimitBytes) {
+                showModal('File Too Large', `The selected file is too large for a pure frontend QR code. Standard limits are ~3KB. Your file is ${(file.size / 1024).toFixed(1)}KB. Please select a much smaller or heavily compressed file.`);
+                state.qrData = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                state.qrData = e.target.result; // Base64 data URL
+            };
+            reader.onerror = () => showModal('Error', 'Failed to read file.');
+            reader.readAsDataURL(file);
+        }
+
+        // --- Generate QR Logic ---
+        function handleGenerate() {
+            // Extract data based on tab
+            let dataToEncode = '';
+            
+            if (state.currentTab === 'tab-link') {
+                dataToEncode = els.inputs.link.value.trim();
+            } else if (state.currentTab === 'tab-text') {
+                dataToEncode = els.inputs.text.value.trim();
+            } else {
+                // Image or Video (already in state.qrData from file handling)
+                dataToEncode = state.qrData;
+            }
+
+            if (!dataToEncode) {
+                showModal('Missing Input', 'Please provide content (link, text, or file) to generate the QR code.');
+                return;
+            }
+
+            // Check length (roughly, JS strings are UTF-16, this is a soft check)
+            if (dataToEncode.length > 2900) {
+                showModal('Data Too Large', 'The encoded data exceeds the standard QR code limit. Try shortening your text or using a smaller file.');
+                return;
+            }
+
+            state.qrData = dataToEncode;
+            
+            // Show Workspace
+            els.workspace.classList.remove('hidden');
+            els.workspace.classList.add('flex');
+            
+            // Smooth scroll to workspace
+            setTimeout(() => {
+                els.workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            renderQR();
+        }
+
+        function renderQR() {
+            els.qrContainer.innerHTML = ''; // Clear previous
+            
+            const fgColor = els.optColorFg.value;
+            const bgColor = els.optColorBg.value;
+            const dotsStyle = els.optDots.value;
+            const cornersStyle = els.optCorners.value;
+
+            // Apply Background color to capture area for consistent exporting
+            els.captureArea.style.backgroundColor = bgColor;
+            els.optTextColor.value = fgColor; // Sync text color default
+            updateBorderTextColors();
+
+            state.qrCodeStyling = new window.QRCodeStyling({
+                width: state.baseSize,
+                height: state.baseSize,
+                data: state.qrData,
+                margin: 5,
+                type: "canvas", // Using canvas for better compatibility with html2canvas later
+                qrOptions: {
+                    errorCorrectionLevel: 'M'
+                },
+                dotsOptions: {
+                    color: fgColor,
+                    type: dotsStyle
+                },
+                backgroundOptions: {
+                    color: bgColor,
+                },
+                cornersSquareOptions: {
+                    color: fgColor,
+                    type: cornersStyle
+                }
+            });
+
+            state.qrCodeStyling.append(els.qrContainer);
+            updateBorderTexts(); // Ensure texts match current inputs
+        }
+
+        // --- Customization Listeners ---
+        function setupCustomizationListeners() {
+            // Style changes trigger re-render
+            els.optDots.addEventListener('change', renderQR);
+            els.optCorners.addEventListener('change', renderQR);
+            
+            // Color pickers logic (sync text and color inputs)
+            const setupColorPicker = (colorInput, textInput) => {
+                colorInput.addEventListener('input', (e) => {
+                    textInput.value = e.target.value.toUpperCase();
+                    renderQR();
+                });
+                textInput.addEventListener('change', (e) => {
+                    // Simple hex validation
+                    if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                        colorInput.value = e.target.value;
+                        renderQR();
+                    } else {
+                        textInput.value = colorInput.value.toUpperCase();
+                    }
+                });
+            };
+
+            setupColorPicker(els.optColorFg, els.optColorFgText);
+            setupColorPicker(els.optColorBg, els.optColorBgText);
+
+            // Border Text live updates
+            const textFields = ['Top', 'Bottom', 'Left', 'Right'];
+            textFields.forEach(pos => {
+                els[`optText${pos}`].addEventListener('input', (e) => {
+                    els[`prevText${pos}`].textContent = e.target.value;
+                });
+            });
+
+            els.optTextColor.addEventListener('input', updateBorderTextColors);
+        }
+
+        function updateBorderTexts() {
+            els.prevTextTop.textContent = els.optTextTop.value;
+            els.prevTextBottom.textContent = els.optTextBottom.value;
+            els.prevTextLeft.textContent = els.optTextLeft.value;
+            els.prevTextRight.textContent = els.optTextRight.value;
+        }
+
+        function updateBorderTextColors() {
+            const c = els.optTextColor.value;
+            els.prevTextTop.style.color = c;
+            els.prevTextBottom.style.color = c;
+            els.prevTextLeft.style.color = c;
+            els.prevTextRight.style.color = c;
+        }
+
+        // --- Export & Reset ---
+        function setupExportListeners() {
+            els.exportScale.addEventListener('input', (e) => {
+                els.scaleValDisplay.textContent = `${e.target.value}x`;
+            });
+
+            els.btnDownload.addEventListener('click', processDownload);
+            
+            els.btnReset.addEventListener('click', () => {
+                // Reset inputs
+                els.inputs.link.value = '';
+                els.inputs.text.value = '';
+                els.inputs.imageFile.value = '';
+                els.inputs.videoFile.value = '';
+                els.fileNames.image.textContent = '';
+                els.fileNames.video.textContent = '';
+                
+                // Reset customizer
+                els.optTextTop.value = '';
+                els.optTextBottom.value = '';
+                els.optTextLeft.value = '';
+                els.optTextRight.value = '';
+                
+                // Hide workspace
+                els.workspace.classList.add('hidden');
+                els.workspace.classList.remove('flex');
+                state.qrData = '';
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        async function processDownload() {
+            const format = els.exportFormat.value;
+            const scale = parseInt(els.exportScale.value);
+
+            // Disable button during processing
+            els.btnDownload.disabled = true;
+            els.btnDownload.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Processing...';
+
+            try {
+                // Use html2canvas to capture the entire wrapper (QR + Text)
+                const canvas = await html2canvas(els.captureArea, {
+                    scale: scale, 
+                    backgroundColor: null, // Transparent to let area color show
+                    logging: false
+                });
+
+                if (format === 'pdf') {
+                    // jsPDF initialization
+                    const { jsPDF } = window.jspdf;
+                    // Orientation based on canvas aspect ratio
+                    const orientation = canvas.width > canvas.height ? 'l' : 'p';
+                    const doc = new jsPDF(orientation, 'px', [canvas.width, canvas.height]);
+                    
+                    const imgData = canvas.toDataURL('image/png', 1.0);
+                    doc.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    doc.save('qr-code-custom.pdf');
+                } else {
+                    // PNG or WEBP
+                    const mimeType = format === 'webp' ? 'image/webp' : 'image/png';
+                    const imgData = canvas.toDataURL(mimeType, 1.0);
+                    
+                    // Trigger download
+                    const link = document.createElement('a');
+                    link.download = `qr-code-custom.${format}`;
+                    link.href = imgData;
+                    link.click();
+                }
+            } catch (err) {
+                console.error("Export error: ", err);
+                showModal('Export Error', 'An error occurred while generating the file. Please try again.');
+            } finally {
+                // Reset button state
+                els.btnDownload.disabled = false;
+                els.btnDownload.innerHTML = '<i class="ph ph-download-simple text-xl"></i> Download';
+            }
+        }
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
